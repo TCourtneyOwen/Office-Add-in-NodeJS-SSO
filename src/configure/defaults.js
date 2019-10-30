@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 exports.azCliInstallCommandPath = path.resolve(`${__dirname}/scripts/azCliInstallCmd.ps1`);
 exports.azRestpCreateCommandPath = path.resolve(`${__dirname}/scripts/azRestAppCreateCmd.txt`);
+exports.fallbackAuthDialogFilePath = path.resolve(`${process.cwd()}/src/public/javascripts/fallbackAuthDialog.js`);
 exports.getApplicationInfoCommandPath = path.resolve(`${__dirname}/scripts/azGetApplicationInfoCmd.txt`);
 exports.getInstalledAppsPath = path.resolve(`${__dirname}/scripts/getInstalledApps.ps1`);
 exports.grantAdminConsentCommandPath = path.resolve(`${__dirname}/scripts/azGrantAdminConsentCmd.txt`);

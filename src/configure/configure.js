@@ -1,6 +1,7 @@
 const ssoAppData = require('./ssoAppDataSetttings');
 const childProcess = require('child_process');
 const defaults = require('./defaults');
+require('dotenv').config();
 const fs = require('fs');
 const passwordGenerator = require('generate-password');
 const manifest = require('office-addin-manifest');
@@ -37,7 +38,7 @@ async function createNewApplication(ssoAppName, secret) {
         console.log('Registering new application in Azure');
         let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
         const re = new RegExp('{SSO-AppName}', 'g');
-        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{SSO-Secret}', secret);
+        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{SSO-Secret}', secret).replace('{PORT}', process.env.PORT);
         const applicationJson = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */, true /* configureSSO */);
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
@@ -145,7 +146,7 @@ async function setIdentifierUri(applicationJson) {
     try {
         console.log('Setting identifierUri');
         let azRestCommand = await fs.readFileSync(defaults.setIdentifierUriCommmandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId);
+        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId).replace('{PORT}', process.env.PORT);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
         throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);

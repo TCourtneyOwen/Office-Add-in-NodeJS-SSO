@@ -46,6 +46,7 @@ function getSecretFromCredentialStore(ssoAppName) {
 
 function writeApplicationData(applicationId) {
     try {
+        // Update .ENV file
         if (fs.existsSync(defaults.ssoDataFilePath)) {
             const appData = fs.readFileSync(defaults.ssoDataFilePath, 'utf8');
             const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
@@ -55,6 +56,19 @@ function writeApplicationData(applicationId) {
         }
     } catch (err) {
         throw new Error(`Unable to write SSO application data to ${defaults.ssoDataFilePath}. \n${err}`);
+    }
+
+    try {
+        // Update fallbackAuthDialog.js
+        if (fs.existsSync(defaults.fallbackAuthDialogFilePath)) {
+            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogFilePath, 'utf8');
+            const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
+            fs.writeFileSync(defaults.fallbackAuthDialogFilePath, updatedSrcFile);
+        } else {
+            throw new Error(`${defaults.fallbackAuthDialogFilePath} does not exist`)
+        }
+    } catch (err) {
+        throw new Error(`Unable to write SSO application data to ${defaults.fallbackAuthDialogFilePath}. \n${err}`);
     }
 }
 

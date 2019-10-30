@@ -9,6 +9,7 @@ var debug = require('debug')('ssoapp:server');
 var https = require('https');
 var fs = require('fs');
 var devCerts = require('office-addin-dev-certs');
+const dotenv = require('dotenv').config();
 
 /**
  * Get port from environment and store in Express.
