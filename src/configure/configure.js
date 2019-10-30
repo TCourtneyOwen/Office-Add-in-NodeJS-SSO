@@ -25,8 +25,10 @@ async function configureSSOApplication() {
         ssoAppData.writeApplicationData(applicationJson.appId);
         ssoAppData.addSecretToCredentialStore(manifestInfo.displayName, secret);
         updateProjectManifest(applicationJson.appId);
+        await logoutAzure();
         console.log("Outputting Azure application info:\n");
         console.log(applicationJson);
+        
     }
     else {
         throw new Error(`Login to Azure did not succeed.`);
@@ -120,6 +122,11 @@ async function logIntoAzure() {
     return await promiseExecuteCommand('az login --allow-no-subscriptions');
 }
 
+async function logoutAzure() {
+    console.log('Logging out of Azure now');
+    return await promiseExecuteCommand('az logout');
+}
+
 
 async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = false) {
     return new Promise((resolve, reject) => {
@@ -132,6 +139,7 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
                 if (configureSSO) {
                     await setIdentifierUri(results);
                     await setSignInAudience(results);
+                    await setImplicitGrantPermissions(results);
                     await grantAdminContent(results);
                 }
                 resolve(results);
@@ -140,6 +148,16 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
             reject(err);
         }
     });
+}
+
+async function setImplicitGrantPermissions(applicationJson) {
+    console.log('Setting implicit grant permissions');
+    try {
+        const oathAllowImplictFlowCommand = `az ad app update --id ${applicationJson.id} --oauth2-allow-implicit-flow true`;
+        await promiseExecuteCommand(oathAllowImplictFlowCommand);
+    } catch (err) {
+        throw new Error(`Unable to set oauth2AllowImplicitFlow for ${applicationJson.displayName}. \n${err}`);
+    }   
 }
 
 async function setIdentifierUri(applicationJson) {
