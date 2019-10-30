@@ -139,8 +139,8 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
                 if (configureSSO) {
                     await setIdentifierUri(results);
                     await setSignInAudience(results);
-                    await setImplicitGrantPermissions(results);
                     await grantAdminContent(results);
+                    await setImplicitGrantPermissions(results);
                 }
                 resolve(results);
             });
