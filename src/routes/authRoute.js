@@ -36,18 +36,22 @@ router.get('/', async function(req, res, next) {
     const tenant = 'common';
     const tokenURLSegment = 'oauth2/v2.0/token';
 
-    const tokenResponse = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
-      method: 'POST',
-      body: form(formParams),
-      headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-    const json = await tokenResponse.json();
+    try {
+      const tokenResponse = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
+        method: 'POST',
+        body: form(formParams),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+      const json = await tokenResponse.json();
     
-    res.send(json);
-
+      res.send(json);
+    }
+    catch(error) {
+      res.status(500).send(error);
+    }
   }
 });
 

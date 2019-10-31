@@ -14,7 +14,7 @@ let retryGetAccessToken = 0;
 
 async function getGraphData() {
     try {
-        let bootstrapToken = await OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true }); 
+        let bootstrapToken = await OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true, forMSGraphAccess: true });
         let exchangeResponse = await getGraphToken(bootstrapToken);
         if (exchangeResponse.claims) {
             // Microsoft Graph requires an additional form of authentication. Have the Office host 
@@ -27,7 +27,7 @@ async function getGraphData() {
         if (exchangeResponse.error) {
             // AAD errors are returned to the client with HTTP code 200, so they do not trigger
             // the catch block below.
-            handleAADErrors(exchangeResponse);            
+            handleAADErrors(exchangeResponse);
         } 
         else 
         {
@@ -66,7 +66,7 @@ function handleClientSideErrors(error) {
         case 13001:
             // No one is signed into Office. If the add-in cannot be effectively used when no one 
             // is logged into Office, then the first call of getAccessToken should pass the 
-            // `allowSignInPrompt: true` option.
+            // `allowSignInPrompt: true` option. Since this sample does that, you should not see this error
             showMessage("No one is signed into Office. But you can use many of the add-ins functions anyway. If you want to log in, press the Get OneDrive File Names button again.");  
             break;
         case 13002:
@@ -100,7 +100,7 @@ function handleAADErrors(exchangeResponse) {
     // with "The provided value for the 'assertion' is not valid. The assertion has expired."
     // Retry the call of getAccessToken (no more than once). This time Office will return a 
     // new unexpired bootstrap token. 
-    if ((exchangeResponse.error_description === "The provided value for the 'assertion' is not valid. The assertion has expired.")
+    if ((exchangeResponse.error_description.indexOf("AADSTS500133") !== -1)
         &&
         (retryGetAccessToken <= 0)) 
     {

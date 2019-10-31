@@ -10,7 +10,7 @@
     "configure-sso": "node src/configure/configure.js",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
-    "sideload": "office-addin-debugging start src/manifest/manifest_local.xml",
+    "sideload": "office-addin-debugging start manifest.xml",
     "start": "concurrently \"npm run start-server\" \"npm run sideload\" ",
     "start-server": "tsc && node src/bin/www"
   },
