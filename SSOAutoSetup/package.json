@@ -10,12 +10,12 @@
     "build": "npm-run-all clean -p tsc cpx",
     "clean": "rimraf dist",
     "configure-sso": "node ./node_modules/office-addin-sso/lib/cli.js configure manifest.xml Office-Addin-NodeJS-SSO",
-    "cpx": "cpx \"./src/**/!(*.js)\" dist && cpx \"assets/images/**/*.*\" dist/images && cpx \"src/index.html\" dist && cpx \"styles/**/*.*\" dist/styles && cpx \"views/**/*.*\" dist/views",
+    "cpx": "cpx \"src/images/**/*.*\" dist/images && cpx \"src/taskpane/taskpane.html\" dist && cpx \"src/taskpane/dialog.html\" dist && cpx \"src/styles/**/*.*\" dist/styles",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "sideload": "office-addin-debugging start manifest.xml",
     "start": "concurrently \"npm run start-server\" \"npm run sideload\" ",
-    "start-server": "tsc && node src/bin/www"
+    "start-server": "node server.js"
   },
   "dependencies": {
     "@types/jquery": "^3.3.31",
@@ -43,6 +43,9 @@
     "concurrently": "^4.1.2",
     "generate-password": "^1.4.2",
     "rimraf": "3.0.0",
-    "typescript": "^3.6.4"
+    "typescript": "^3.6.4",
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.8",
+    "webpack-dev-server": "^3.8.0"
   }
 }
