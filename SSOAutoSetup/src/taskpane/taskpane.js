@@ -53,7 +53,7 @@ async function getGraphData() {
 
 async function getGraphToken(bootstrapToken) {
     let response = await $.ajax({type: "GET", 
-		url: "/auth",
+		url: "/api/values",
         headers: {"Authorization": "Bearer " + bootstrapToken }, 
         cache: false
     });
