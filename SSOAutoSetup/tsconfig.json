@@ -1,12 +1,21 @@
 {
-    "compileOnSave": true,
     "compilerOptions": {
-        "sourceMap": true,
         "allowJs": true,
+        "baseUrl": ".",
+        "experimentalDecorators": true,
+        "noEmitOnError": true,
+        "outDir": "dist",
+        "sourceMap": true,
         "target": "es5",
-        "outFile": "src/public/javascripts/ssoAuth.js"
+        "lib": [
+            "es2015",
+            "dom"
+        ]
     },
-    "files": [
-        "src/public/javascripts/ssoAuthES6.js",
+    "exclude": [
+        "node_modules",
+        "dist",
+        "lib",
+        "lib-amd"
     ]
 }
