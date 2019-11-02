@@ -156,8 +156,8 @@
       </bt:LongStrings>
     </Resources>
     <WebApplicationInfo>
-      <Id>46ceb732-3c69-4a7e-8ead-4c91759f6429</Id>
-      <Resource>api://localhost:3000/46ceb732-3c69-4a7e-8ead-4c91759f6429</Resource>
+      <Id>{application GUID here}</Id>
+      <Resource>api://localhost:3000/{application GUID here}</Resource>
       <Scopes>
         <Scope>Files.Read.All</Scope>
         <Scope>profile</Scope>

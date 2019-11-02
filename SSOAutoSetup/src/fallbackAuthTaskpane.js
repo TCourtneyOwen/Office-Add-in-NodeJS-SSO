@@ -31,7 +31,7 @@ Office.initialize = function () {
 
 const msalConfig = {
     auth: {
-        clientId: "46ceb732-3c69-4a7e-8ead-4c91759f6429", //This is your client ID
+        clientId: "{application GUID here}", //This is your client ID
         authority: "https://login.microsoftonline.com/common", 
         redirectURI: "https://localhost:3000/dialog.html", 
         navigateToLoginRequestUrl: false,
