@@ -10,7 +10,7 @@
     "build": "npm-run-all clean -p tsc cpx",
     "clean": "rimraf dist",
     "configure-sso": "node ./node_modules/office-addin-sso/lib/cli.js configure manifest.xml Office-Addin-NodeJS-SSO",
-    "cpx": "cpx \"src/images/**/*.*\" dist/images && cpx \"src/taskpane.html\" dist && cpx \"src/dialog.html\" dist && cpx \"src/styles/**/*.*\" dist/styles",
+    "cpx": "cpx \"src/images/**/*.*\" dist/images && cpx \"src/**/*.*\" dist/src && cpx \"src/taskpane.html\" dist && cpx \"src/dialog.html\" dist && cpx \"src/styles/**/*.*\" dist/styles",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "sideload": "office-addin-debugging start manifest.xml",
