@@ -53,7 +53,7 @@ async function getGraphData() {
 
 async function getGraphToken(bootstrapToken) {
     let response = await $.ajax({type: "GET", 
-		url: "/api/values",
+		url: "/auth",
         headers: {"Authorization": "Bearer " + bootstrapToken }, 
         cache: false
     });
@@ -226,7 +226,7 @@ function dialogFallback() {
 	// We fall back to Dialog API for any error.
 	// TODO: handle specific errors only?
 
-    var url = "/dialog.html"; 
+    var url = "/fallbackAuthDialog.html"; 
 	showLoginPopup(url);
 }
 
