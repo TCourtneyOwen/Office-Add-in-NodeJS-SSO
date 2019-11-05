@@ -10,7 +10,7 @@
     "build": "npm-run-all clean -p tsc cpx",
     "clean": "rimraf dist",
     "configure-sso": "node ./node_modules/office-addin-sso/lib/cli.js configure manifest.xml Office-Addin-NodeJS-SSO",
-    "cpx": "cpx \"images/**/*.*\" dist/images && cpx \"src/**/*.*\" dist/src && cpx \"src/taskpane/taskpane.html\" dist && cpx \"src/taskpane/fallbackAuthDialog.html\" dist && cpx \"styles/**/*.*\" dist/styles && cpx \"src/views**/*.*\" dist",
+    "cpx": "cpx \"images/**/*.*\" dist/images && cpx \"src/**/*.*\" dist/src && cpx \"src/taskpane.html\" dist && cpx \"src/fallbackAuthDialog.html\" dist && cpx \"styles/**/*.*\" dist/styles && cpx \"src/views**/*.*\" dist",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "sideload": "office-addin-debugging start manifest.xml",
@@ -22,18 +22,9 @@
     "@types/office-js": "^1.0.29",
     "cookie-parser": "~1.4.4",
     "cpx": "^1.5.0",
-    "debug": "~2.6.9",
     "dotenv": "^8.1.0",
-    "envfile": "^3.0.0",
-    "express": "~4.16.1",
-    "form-urlencoded": "^4.0.0",
-    "http-errors": "~1.6.3",
     "jQuery": "^1.7.4",
-    "jshint": "^2.10.2",
-    "jsonwebtoken": "^8.5.1",
-    "morgan": "~1.9.1",
-    "node-fetch": "^2.6.0",
-    "pug": "2.0.0-beta11"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
     "npm-run-all": "4.1.5",
@@ -43,9 +34,6 @@
     "concurrently": "^4.1.2",
     "generate-password": "^1.4.2",
     "rimraf": "3.0.0",
-    "typescript": "^3.6.4",
-    "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.8",
-    "webpack-dev-server": "^3.8.0"
+    "typescript": "^3.6.4"
   }
 }

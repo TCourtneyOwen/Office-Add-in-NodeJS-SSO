@@ -3,7 +3,6 @@
  *
  * This file shows how to use the SSO API to get a bootstrap token.
  */
-
 Office.onReady(function(info) {
     $(document).ready(function() {
         $('#getGraphDataButton').click(getGraphData);
@@ -31,9 +30,6 @@ async function getGraphData() {
         } 
         else 
         {
-            // For debugging:
-            // showMessage("ACCESS TOKEN: " + JSON.stringify(exchangeResponse.access_token));
-
             // makeGraphApiCall makes an AJAX call to the MS Graph endpoint. Errors are caught
             // in the .fail callback of that call, not in the catch block below.
             makeGraphApiCall(exchangeResponse.access_token);
@@ -109,9 +105,6 @@ function handleAADErrors(exchangeResponse) {
     }
     else 
     {
-        // For all other AAD errors, fallback to non-SSO sign-in.
-        // For debugging: 
-        // showMessage("AAD ERROR: " + JSON.stringify(exchangeResponse));                   
         dialogFallback();
     }
 }

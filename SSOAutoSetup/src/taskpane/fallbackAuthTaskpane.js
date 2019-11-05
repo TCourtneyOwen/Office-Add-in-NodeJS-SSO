@@ -33,7 +33,7 @@ const msalConfig = {
     auth: {
         clientId: "{application GUID here}", //This is your client ID
         authority: "https://login.microsoftonline.com/common", 
-        redirectURI: "https://localhost:3000/dialog.html", 
+        redirectURI: "https://localhost:3000/fallbackAuthDialog.html", 
         navigateToLoginRequestUrl: false,
         response_type: "access_token"
     },
