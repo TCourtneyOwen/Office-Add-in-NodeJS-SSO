@@ -3,7 +3,6 @@ const childProcess = require('child_process');
 const defaults = require('./defaults');
 require('dotenv').config();
 const fs = require('fs');
-const passwordGenerator = require('generate-password');
 const manifest = require('office-addin-manifest');
 
 configureSSOApplication();
@@ -11,7 +10,7 @@ configureSSOApplication();
 async function configureSSOApplication() {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
     const cliInstalled = await azureCliInstalled();
-    if(!cliInstalled) {
+    if (!cliInstalled) {
         console.log("Azure CLI is not installed.  Installing now before proceeding");
         await installAzureCli();
         console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
@@ -22,27 +21,27 @@ async function configureSSOApplication() {
     if (userJson) {
         console.log('Login was successful!');
         const manifestInfo = await manifest.readManifestFile(defaults.manifestPath);
-        const secret = passwordGenerator.generate({ length: 32, numbers: true, uppercase: true, strict: true });
-        const applicationJson = await createNewApplication(manifestInfo.displayName, secret);
+        const applicationJson = await createNewApplication(manifestInfo.displayName);
         ssoAppData.writeApplicationData(applicationJson.appId);
-        ssoAppData.addSecretToCredentialStore(manifestInfo.displayName, secret);
+        const secretJson = await setApplicationSecret(applicationJson);
+        ssoAppData.addSecretToCredentialStore(manifestInfo.displayName, secretJson.secretText);
         updateProjectManifest(applicationJson.appId);
         await logoutAzure();
         console.log("Outputting Azure application info:\n");
         console.log(applicationJson);
-        
+
     }
     else {
         throw new Error(`Login to Azure did not succeed.`);
     }
 }
 
-async function createNewApplication(ssoAppName, secret) {
+async function createNewApplication(ssoAppName) {
     try {
         console.log('Registering new application in Azure');
         let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
         const re = new RegExp('{SSO-AppName}', 'g');
-        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{SSO-Secret}', secret).replace('{PORT}', process.env.PORT);
+        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{PORT}', process.env.PORT);
         const applicationJson = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */, true /* configureSSO */);
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
@@ -61,7 +60,7 @@ async function applicationReady(applicationJson) {
         return appJson !== "";
     } catch (err) {
         throw new Error(`Unable to get application info for ${applicationJson.displayName}. \n${err}`);
-    }    
+    }
 }
 
 async function grantAdminContent(applicationJson) {
@@ -71,7 +70,7 @@ async function grantAdminContent(applicationJson) {
         let appReady = false;
         while (appReady === false) {
             appReady = await applicationReady(applicationJson);
-        }        
+        }
         let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
         await promiseExecuteCommand(azRestCommand);
@@ -87,7 +86,7 @@ async function azureCliInstalled() {
                 const appsInstalledWindowsCommand = `powershell -ExecutionPolicy Bypass -File "${defaults.getInstalledAppsPath}"`;
                 const appsWindows = await promiseExecuteCommand(appsInstalledWindowsCommand);
                 return appsWindows.filter(app => app.DisplayName === 'Microsoft Azure CLI').length > 0
-            case "darwin": 
+            case "darwin":
                 const appsInstalledMacCommand = 'brew list';
                 const appsMac = await promiseExecuteCommand(appsInstalledMacCommand, false /* returnJson */);
                 return appsMac.includes('azure-cli');;;
@@ -135,6 +134,11 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
         try {
             childProcess.exec(cmd, async (err, stdout, stderr) => {
                 let results = stdout;
+                if (err) {
+                    console.log(stderr);
+                    reject(stderr);
+                }
+
                 if (results !== '' && returnJson) {
                     results = JSON.parse(results);
                 }
@@ -152,6 +156,18 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
     });
 }
 
+async function setApplicationSecret(applicationJson) {
+    try {
+        console.log('Setting identifierUri');
+        let azRestCommand = await fs.readFileSync(defaults.azAddSecretCommandPath, 'utf8');
+        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
+        const secretJson = await promiseExecuteCommand(azRestCommand);
+        return secretJson;
+    } catch (err) {
+        throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);
+    }
+}
+
 async function setImplicitGrantPermissions(applicationJson) {
     console.log('Setting implicit grant permissions');
     try {
@@ -159,7 +175,7 @@ async function setImplicitGrantPermissions(applicationJson) {
         await promiseExecuteCommand(oathAllowImplictFlowCommand);
     } catch (err) {
         throw new Error(`Unable to set oauth2AllowImplicitFlow for ${applicationJson.displayName}. \n${err}`);
-    }   
+    }
 }
 
 async function setIdentifierUri(applicationJson) {
@@ -198,5 +214,3 @@ async function updateProjectManifest(applicationId) {
         throw new Error(`Unable to update ${defaults.manifestPath}. \n${err}`);
     }
 }
-
-exports.updateProjectManifest = updateProjectManifest;
