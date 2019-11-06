@@ -15,10 +15,11 @@
     "tsc:w": "tsc -w",
     "sideload": "office-addin-debugging start manifest.xml",
     "start": "concurrently \"npm run start-server\" \"npm run sideload\" ",
-    "start-server": "node server.js"
+    "start-server": "node ./node_modules/office-addin-sso/lib/cli.js start manifest.xml"
   },
   "dependencies": {
     "@types/jquery": "^3.3.31",
+    "@types/node": "^12.12.5",
     "@types/office-js": "^1.0.29",
     "cookie-parser": "~1.4.4",
     "cpx": "^1.5.0",
