@@ -14,5 +14,6 @@
         "dist",
         "lib",
         "lib-amd",
+        "src/server.js"
     ]
 }
