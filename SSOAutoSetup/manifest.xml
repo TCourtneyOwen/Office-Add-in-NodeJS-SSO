@@ -159,7 +159,7 @@
       <Id>{application GUID here}</Id>
       <Resource>api://localhost:3000/{application GUID here}</Resource>
       <Scopes>
-        <Scope>Files.Read.All</Scope>
+        <Scope>User.Read</Scope>
         <Scope>profile</Scope>
       </Scopes>
     </WebApplicationInfo>

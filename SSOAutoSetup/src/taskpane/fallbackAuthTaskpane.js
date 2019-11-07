@@ -44,7 +44,7 @@ const msalConfig = {
 };
 
 var requestObj = {
-    scopes: ["https://graph.microsoft.com/Files.Read.All"]
+    scopes: ["https://graph.microsoft.com/User.Read"]
 };
 
 const userAgentApp = new Msal.UserAgentApplication(msalConfig);
