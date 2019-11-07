@@ -1,3 +1,4 @@
+import { makeGraphApiCall } from './graphHelper';
 import { showMessage } from './messageHelper';
 var loginDialog;
 
@@ -16,7 +17,7 @@ function processMessage(arg) {
     console.log("Message received in processMessage: " + JSON.stringify(arg));
     let messageFromDialog = JSON.parse(arg.message);
 
-    if (Microsoft.Office.WebExtension.status === 'success') {
+    if (messageFromDialog.status === 'success') {
         // We now have a valid access token.
         loginDialog.close();
         makeGraphApiCall(messageFromDialog.result);
