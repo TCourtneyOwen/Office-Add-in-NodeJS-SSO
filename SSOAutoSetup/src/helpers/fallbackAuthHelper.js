@@ -1,4 +1,4 @@
-import { showMessage } from './message-helper';
+import { showMessage } from './messageHelper';
 var loginDialog;
 
 export function dialogFallback() {

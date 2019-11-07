@@ -69,7 +69,7 @@ ul {
       margin-top: 15px; }
     .ms-firstrun-instructionstep__header--image {
       background: transparent no-repeat center center;
-      background-image: url("./../images/generic-placeholder.png");
+      background-image: url("./assets/generic-placeholder.png");
       background-size: cover;
       margin-top: 15px;
       display: -webkit-flex;
