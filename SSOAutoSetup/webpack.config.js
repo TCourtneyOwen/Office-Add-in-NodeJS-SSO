@@ -11,7 +11,7 @@ module.exports = async (env, options) => {
         entry: {
             polyfill: "@babel/polyfill",
             taskpane: "./src/taskpane/taskpane.ts",
-            fallbackauthtaskpane: "./src/taskpane/fallbackAuthTaskpane.ts",
+            fallbackauthtaskpane: "./src/taskpane/fallbackauthtaskpane.ts",
         },
         resolve: {
             extensions: [".ts", ".tsx", ".html", ".js"]
