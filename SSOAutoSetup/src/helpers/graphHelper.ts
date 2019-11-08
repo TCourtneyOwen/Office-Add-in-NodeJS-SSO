@@ -3,15 +3,15 @@ import { handleAADErrors, handleClientSideErrors } from './errorHandler'
 import { showMessage } from './messageHelper';
 import { writeFileNamesToOfficeDocument } from './documentHelper';
 
-export async function getGraphData() {
+export async function getGraphData(): Promise<void> {
     try {
-        let bootstrapToken = await OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true, forMSGraphAccess: true });
-        let exchangeResponse = await getGraphToken(bootstrapToken);
+        let bootstrapToken: string = await OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true, forMSGraphAccess: true });
+        let exchangeResponse: any = await getGraphToken(bootstrapToken);
         if (exchangeResponse.claims) {
             // Microsoft Graph requires an additional form of authentication. Have the Office host 
             // get a new token using the Claims string, which tells AAD to prompt the user for all 
             // required forms of authentication.
-            let mfaBootstrapToken = await OfficeRuntime.auth.getAccessToken({ authChallenge: exchangeResponse.claims });
+            let mfaBootstrapToken: string = await OfficeRuntime.auth.getAccessToken({ authChallenge: exchangeResponse.claims });
             exchangeResponse = await getGraphToken(mfaBootstrapToken);
         }
 
@@ -38,7 +38,7 @@ export async function getGraphData() {
     }
 }
 
-export function makeGraphApiCall(accessToken) {
+export function makeGraphApiCall(accessToken: string): void {
     $.ajax({
         type: "GET",
         url: "/getuserdata",
@@ -62,7 +62,7 @@ export function makeGraphApiCall(accessToken) {
         });
 }
 
-export async function getGraphToken(bootstrapToken) {
+export async function getGraphToken(bootstrapToken): Promise<any> {
     let response = await $.ajax({
         type: "GET",
         url: "/auth",

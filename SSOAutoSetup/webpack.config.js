@@ -10,8 +10,8 @@ module.exports = async (env, options) => {
         devtool: "source-map",
         entry: {
             polyfill: "@babel/polyfill",
-            taskpane: "./src/taskpane/taskpane.js",
-            fallbackauthtaskpane: "./src/taskpane/fallbackAuthTaskpane.js",
+            taskpane: "./src/taskpane/taskpane.ts",
+            fallbackauthtaskpane: "./src/taskpane/fallbackAuthTaskpane.ts",
         },
         resolve: {
             extensions: [".ts", ".tsx", ".html", ".js"]
@@ -19,14 +19,14 @@ module.exports = async (env, options) => {
         module: {
             rules: [
                 {
-                    test: /\.js$/,
+                    test: /\.ts$/,
                     exclude: /node_modules/,
-                    use: {
-                        loader: "babel-loader",
-                        options: {
-                            presets: ["@babel/preset-env"]
-                        }
-                    }
+                    use: "babel-loader"
+                },
+                {
+                    test: /\.tsx?$/,
+                    exclude: /node_modules/,
+                    use: "ts-loader"
                 },
                 {
                     test: /\.html$/,

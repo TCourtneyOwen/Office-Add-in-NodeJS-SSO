@@ -1,4 +1,4 @@
-export function writeFileNamesToOfficeDocument(result) {
+export function writeFileNamesToOfficeDocument(result: string[]) {
 
     return new OfficeExtension.Promise(function (resolve, reject) {
         try {
@@ -23,10 +23,10 @@ export function writeFileNamesToOfficeDocument(result) {
     });
 }
 
-function writeFileNamesToWorksheet(result) {
+function writeFileNamesToWorksheet(result: string[]) {
 
     return Excel.run(function (context) {
-        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const sheet: Excel.Worksheet = context.workbook.worksheets.getActiveWorksheet();
 
         let filenames = [];
         let i;
@@ -45,9 +45,9 @@ function writeFileNamesToWorksheet(result) {
     });
 }
 
-function writeFileNamesToDocument(result) {
+function writeFileNamesToDocument(result: string[]) {
     return Word.run(function (context) {
-        const documentBody = context.document.body;
+        const documentBody: Word.Body = context.document.body;
         for (let i = 0; i < result.length; i++) {
             documentBody.insertParagraph(result[i], "End");
         }
@@ -58,7 +58,7 @@ function writeFileNamesToDocument(result) {
 
 function writeFileNamesToPresentation(result) {
 
-    let fileNames = "";
+    let fileNames: string = "";
     for (let i = 0; i < result.length; i++) {
         fileNames += result[i] + '\n';
     }

@@ -2,7 +2,7 @@ import { getGraphData } from './graphHelper';
 import { dialogFallback } from './fallbackAuthHelper';
 import { showMessage } from './messageHelper';
 
-export function handleClientSideErrors(error) {
+export function handleClientSideErrors(error: any) {
     switch (error.code) {
 
         case 13001:
@@ -36,7 +36,7 @@ export function handleClientSideErrors(error) {
     }
 }
 
-export function handleAADErrors(exchangeResponse) {
+export function handleAADErrors(exchangeResponse: any) {
     // On rare occasions the bootstrap token is unexpired when Office validates it,
     // but expires by the time it is sent to AAD for exchange. AAD will respond
     // with "The provided value for the 'assertion' is not valid. The assertion has expired."

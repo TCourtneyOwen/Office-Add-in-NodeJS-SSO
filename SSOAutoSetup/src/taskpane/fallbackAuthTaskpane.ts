@@ -3,6 +3,7 @@
  *
  * This file shows how to use MSAL.js to get an access token to Microsoft Graph an pass it to the task pane.
  */
+import * as Msal from 'msal';
 
 Office.initialize = function () { 
     if (Office.context.ui.messageParent)
@@ -29,13 +30,12 @@ Office.initialize = function () {
     }
  };
 
-const msalConfig = {
+const msalConfig: Msal.Configuration = {
     auth: {
         clientId: "{application GUID here}", //This is your client ID
         authority: "https://login.microsoftonline.com/common", 
-        redirectURI: "https://localhost:3000/fallbackAuthDialog.html", 
-        navigateToLoginRequestUrl: false,
-        response_type: "access_token"
+        redirectUri: "https://localhost:3000/fallbackAuthDialog.html",
+        navigateToLoginRequestUrl: false
     },
     cache: {
         cacheLocation: 'localStorage', // Needed to avoid "User login is required" error.
@@ -43,11 +43,11 @@ const msalConfig = {
     }
 };
 
-var requestObj = {
+var requestObj: Object = {
     scopes: ["https://graph.microsoft.com/User.Read"]
 };
 
-const userAgentApp = new Msal.UserAgentApplication(msalConfig);
+const userAgentApp: Msal.UserAgentApplication = new Msal.UserAgentApplication(msalConfig);
 
 function authCallback(error, response) {
     if (error) {
