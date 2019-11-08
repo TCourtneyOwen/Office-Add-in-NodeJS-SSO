@@ -6,7 +6,7 @@ export function dialogFallback() {
     // We fall back to Dialog API for any error.
     // TODO: handle specific errors only?
 
-    var url = "/fallbackAuthDialog.html";
+    var url = "/fallbackauthdialog.html";
     showLoginPopup(url);
 }
 
