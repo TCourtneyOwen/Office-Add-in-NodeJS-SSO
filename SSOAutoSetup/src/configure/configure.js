@@ -1,16 +1,17 @@
-const ssoAppData = require('./ssoAppDataSetttings');
+const chalk = require('chalk');
 const childProcess = require('child_process');
 const defaults = require('./defaults');
 require('dotenv').config();
 const fs = require('fs');
 const manifest = require('office-addin-manifest');
+const ssoDataSettings = require('./ssoAppDataSetttings');
 
 configureSSOApplication();
 
 async function configureSSOApplication() {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
     const cliInstalled = await azureCliInstalled();
-    if(!cliInstalled) {
+    if (!cliInstalled) {
         console.log("Azure CLI is not installed.  Installing now before proceeding");
         await installAzureCli();
         console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
@@ -18,35 +19,64 @@ async function configureSSOApplication() {
     }
 
     const userJson = await logIntoAzure();
-    if (userJson) {
+    if (Object.keys(userJson).length >= 1) {
         console.log('Login was successful!');
         const manifestInfo = await manifest.readManifestFile(defaults.manifestPath);
-        const applicationJson = await createNewApplication(manifestInfo.displayName);
-        ssoAppData.writeApplicationData(applicationJson.appId);
-        const secretJson = await setApplicationSecret(applicationJson);
-        ssoAppData.addSecretToCredentialStore(manifestInfo.displayName, secretJson.secretText);
-        updateProjectManifest(applicationJson.appId);
+
+        // Register application
+        const applicationJson = await createNewApplication(manifestInfo.displayName, userJson);
+
+        // Write application data to manifest and .ENV file
+        await ssoDataSettings.writeApplicationData(applicationJson.appId);
+
+        // Log out of Azure
         await logoutAzure();
-        console.log("Outputting Azure application info:\n");
+
+        // Output application definition to console
         console.log(applicationJson);
-        
     }
     else {
         throw new Error(`Login to Azure did not succeed.`);
     }
 }
 
-async function createNewApplication(ssoAppName) {
+async function createNewApplication(ssoAppName, userJson) {
     try {
         console.log('Registering new application in Azure');
-        let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
-        const re = new RegExp('{SSO-AppName}', 'g');
-        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{PORT}', process.env.PORT);
-        const applicationJson = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */, true /* configureSSO */);
+        let azRestCommand = await fs.readFileSync(defaults.azRestAppCreateCommandPath, 'utf8');
+        const reName = new RegExp('{SSO-AppName}', 'g');
+        const rePort = new RegExp('{PORT}', 'g');
+        azRestCommand = azRestCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
+
+        const applicationJson = await promiseExecuteCommand(azRestCommand, true /* returnJson */);
+
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
+            // Set application IdentifierUri
+            await setIdentifierUri(applicationJson);
+
+            // Set application sign-in audience
+            await setSignInAudience(applicationJson);
+
+            // Grant admin consent for application
+            if (await isUserTenantAdmin(userJson)){
+                await grantAdminContent(applicationJson);
+                await setTenantReplyUrls(applicationJson);
+            } else {
+                console.log(chalk.yellow("You are not a tenant admin so you cannot grant admin consent for your application.  Contact your tenant admin to grant consent"));
+            }
+
+            // Create an application secret and add to the credential store
+            const secret = await setApplicationSecret(applicationJson);
+            console.log(chalk.green(`App secret is ${secret}`));
+            ssoDataSettings.addSecretToCredentialStore(ssoAppName, secret.secretText);
+
+            return applicationJson;
+        } else {
+            console.log(chalk.red("Failed to register application"));
+            return undefined;
         }
-        return applicationJson;
+
     } catch (err) {
         throw new Error(`Unable to register new application ${ssoAppName}. \n${err}`);
     }
@@ -54,13 +84,12 @@ async function createNewApplication(ssoAppName) {
 
 async function applicationReady(applicationJson) {
     try {
-        let azRestCommand = await fs.readFileSync(defaults.getApplicationInfoCommandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
-        const appJson = await promiseExecuteCommand(azRestCommand);
+        const azRestCommand = `az ad app show --id ${applicationJson.appId}`
+        const appJson = await promiseExecuteCommand(azRestCommand, true /* returnJson */, true /* expectError */);
         return appJson !== "";
     } catch (err) {
         throw new Error(`Unable to get application info for ${applicationJson.displayName}. \n${err}`);
-    }    
+    }
 }
 
 async function grantAdminContent(applicationJson) {
@@ -70,9 +99,8 @@ async function grantAdminContent(applicationJson) {
         let appReady = false;
         while (appReady === false) {
             appReady = await applicationReady(applicationJson);
-        }        
-        let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
+        }
+        let azRestCommand = `az ad app permission admin-consent --id ${applicationJson.appId}`;
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
         throw new Error(`Unable to set grant admin consent for ${applicationJson.displayName}. \n${err}`);
@@ -86,7 +114,7 @@ async function azureCliInstalled() {
                 const appsInstalledWindowsCommand = `powershell -ExecutionPolicy Bypass -File "${defaults.getInstalledAppsPath}"`;
                 const appsWindows = await promiseExecuteCommand(appsInstalledWindowsCommand);
                 return appsWindows.filter(app => app.DisplayName === 'Microsoft Azure CLI').length > 0
-            case "darwin": 
+            case "darwin":
                 const appsInstalledMacCommand = 'brew list';
                 const appsMac = await promiseExecuteCommand(appsInstalledMacCommand, false /* returnJson */);
                 return appsMac.includes('azure-cli');;;
@@ -118,9 +146,38 @@ async function installAzureCli() {
     }
 }
 
+async function isUserTenantAdmin(userInfo) {
+    console.log("Check if logged in user is a tenant admin");
+    let azRestCommand = fs.readFileSync(defaults.azRestGetTenantRolesCommandPath, 'utf8');
+    const tenantRoles = await promiseExecuteCommand(azRestCommand);
+    let tenantAdminId = '';
+    tenantRoles.value.forEach(item => {
+        if (item.displayName === "Company Administrator") {
+            tenantAdminId = item.id;
+        }
+    });
+
+    azRestCommand = fs.readFileSync(defaults.azRestGetTenantAdminMembershipCommandPath, 'utf8');
+    azRestCommand = azRestCommand.replace('<TENANT-ADMIN-ID>', tenantAdminId);
+    const tenantAdmins = await promiseExecuteCommand(azRestCommand);
+    let isTenantAdmin = false;
+    tenantAdmins.value.forEach(item => {
+        if (item.userPrincipalName === userInfo[0].user.name) {
+            isTenantAdmin = true;
+        }
+    });
+    return isTenantAdmin;
+}
+
 async function logIntoAzure() {
     console.log('Opening browser for authentication to Azure. Enter valid Azure credentials');
-    return await promiseExecuteCommand('az login --allow-no-subscriptions');
+    let userJson = await promiseExecuteCommand('az login --allow-no-subscriptions');
+    if (Object.keys(userJson).length < 1) {
+        // Try alternate login
+        logoutAzure();
+        userJson = await promiseExecuteCommand('az login');
+    }
+    return userJson
 }
 
 async function logoutAzure() {
@@ -128,19 +185,18 @@ async function logoutAzure() {
     return await promiseExecuteCommand('az logout');
 }
 
-
-async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = false) {
+async function promiseExecuteCommand(cmd, returnJson = true, expectError = false) {
     return new Promise((resolve, reject) => {
         try {
-            childProcess.exec(cmd, async (err, stdout, stderr) => {
-                let results = stdout;              
+            childProcess.exec(cmd, { maxBuffer: 1024 * 102400 }, async (err, stdout, stderr) => {
+                if (err && !expectError) {
+                    console.log(stderr);
+                    reject(stderr);
+                }
+                
+                let results = stdout;
                 if (results !== '' && returnJson) {
                     results = JSON.parse(results);
-                }
-                if (configureSSO) {
-                    await setIdentifierUri(results);
-                    await setSignInAudience(results);
-                    await grantAdminContent(results);
                 }
                 resolve(results);
             });
@@ -153,7 +209,7 @@ async function promiseExecuteCommand(cmd, returnJson = true, configureSSO = fals
 async function setApplicationSecret(applicationJson) {
     try {
         console.log('Setting identifierUri');
-        let azRestCommand = await fs.readFileSync(defaults.azAddSecretCommandPath, 'utf8');
+        let azRestCommand = await fs.readFileSync(defaults.azRestAddSecretCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
         const secretJson = await promiseExecuteCommand(azRestCommand);
         return secretJson;
@@ -165,7 +221,7 @@ async function setApplicationSecret(applicationJson) {
 async function setIdentifierUri(applicationJson) {
     try {
         console.log('Setting identifierUri');
-        let azRestCommand = await fs.readFileSync(defaults.setIdentifierUriCommmandPath, 'utf8');
+        let azRestCommand = await fs.readFileSync(defaults.azRestSetIdentifierUriCommmandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId).replace('{PORT}', process.env.PORT);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
@@ -176,7 +232,7 @@ async function setIdentifierUri(applicationJson) {
 async function setSignInAudience(applicationJson) {
     try {
         console.log('Setting signin audience');
-        let azRestCommand = await fs.readFileSync(defaults.setSigninAudienceCommandPath, 'utf8');
+        let azRestCommand = await fs.readFileSync(defaults.azRestSetSigninAudienceCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
@@ -184,19 +240,54 @@ async function setSignInAudience(applicationJson) {
     }
 }
 
-async function updateProjectManifest(applicationId) {
-    console.log('Updating manifest with application ID');
+async function setTenantReplyUrls(applicationJson) {
     try {
-        // Update manifest with application guid and unique manifest id
-        const manifestContent = await fs.readFileSync(defaults.manifestPath, 'utf8');
-        const re = new RegExp('{application GUID here}', 'g');
-        const updatedManifestContent = manifestContent.replace(re, applicationId);
-        await fs.writeFileSync(defaults.manifestPath, updatedManifestContent);
-        await manifest.modifyManifestFile(defaults.manifestPath, 'random');
+
+        let servicePrinicipaObjectlId = "";
+        let setReplyUrls = true;
+        const sharePointServiceId = "57fb890c-0dab-4253-a5e0-7188c88b2bb4";
+
+        // Get tenant name and construct SharePoint SSO reply urls with tenant name
+        let azRestCommand = fs.readFileSync(defaults.azRestGetOrganizationDetailsCommandPath, 'utf8');
+        const tenantDetails = await promiseExecuteCommand(azRestCommand);
+        const tenantName = tenantDetails.value[0].displayName
+        const oneDriveReplyUrl = `https://${tenantName}-my.sharepoint.com/_forms/singlesignon.aspx`;
+        const sharePointReplyUrl = `https://${tenantName}.sharepoint.com/_forms/singlesignon.aspx`;
+
+        // Get service principals for tenant
+        azRestCommand = 'az ad sp list --all';
+        const servicePrincipals = await promiseExecuteCommand(azRestCommand);
+
+        // Check if SharePoint redirects are set for SharePoint principal
+        for (let item of servicePrincipals) {
+            if (item.appId === sharePointServiceId) {
+                servicePrinicipaObjectlId = item.objectId;
+                if (item.replyUrls.length === 0) {
+                    break;
+                    // if there are reply urls set, then we need to see if the SharePoint SSO reply urls are already set
+                } else {
+                    for (let url of item.replyUrls) {
+                        if (url === oneDriveReplyUrl || url === sharePointReplyUrl) {
+                            setReplyUrls = false;
+                            break;
+                        }
+                    }
+                }
+
+            }
+        }
+
+        if (setReplyUrls) {
+            console.log('Setting SharePoint reply urls for tenant');
+            azRestCommand = fs.readFileSync(defaults.azRestAddTenantReplyUrlsCommandPath, 'utf8');
+            const reName = new RegExp('<TENANT-NAME>', 'g');
+            azRestCommand = azRestCommand.replace(reName, tenantName).replace('<SP-OBJECTID>', servicePrinicipaObjectlId);
+            await promiseExecuteCommand(azRestCommand);
+        } else {
+            console.log("SharePoint reply urls already set");
+        }
 
     } catch (err) {
-        throw new Error(`Unable to update ${defaults.manifestPath}. \n${err}`);
+        throw new Error(`Unable to set tenant reply urls for ${applicationJson.displayName}. \n${err}`);
     }
 }
-
-exports.updateProjectManifest = updateProjectManifest;

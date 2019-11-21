@@ -17,6 +17,7 @@
   "dependencies": {
     "@types/jquery": "^3.3.31",
     "@types/office-js": "^1.0.29",
+    "chalk": "^3.0.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv": "^8.1.0",
@@ -29,7 +30,7 @@
     "jsonwebtoken": "^8.5.1",
     "morgan": "~1.9.1",
     "node-fetch": "^2.6.0",
-    "pug": "2.0.0-beta11"
+    "pug": "^2.0.4"
   },
   "devDependencies": {
     "office-addin-debugging": "^3.0.16",

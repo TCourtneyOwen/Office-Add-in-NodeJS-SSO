@@ -1,6 +1,7 @@
 const childProcess = require('child_process');
 const defaults = require('./defaults');
 const fs = require('fs');
+const manifest = require('office-addin-manifest');
 const os = require('os');
 
 function addSecretToCredentialStore(ssoAppName, secret) {
@@ -44,7 +45,7 @@ function getSecretFromCredentialStore(ssoAppName) {
     }
 }
 
-function writeApplicationData(applicationId) {
+async function writeApplicationData(applicationId) {
     try {
         // Update .ENV file
         if (fs.existsSync(defaults.ssoDataFilePath)) {
@@ -69,6 +70,18 @@ function writeApplicationData(applicationId) {
         }
     } catch (err) {
         throw new Error(`Unable to write SSO application data to ${defaults.fallbackAuthDialogFilePath}. \n${err}`);
+    }
+
+    try {
+        // Update manifest with application guid and unique manifest id
+        const manifestContent = fs.readFileSync(defaults.manifestPath, 'utf8');
+        const re = new RegExp('{application GUID here}', 'g');
+        const updatedManifestContent = manifestContent.replace(re, applicationId);
+        fs.writeFileSync(defaults.manifestPath, updatedManifestContent);
+        await manifest.modifyManifestFile(defaults.manifestPath, 'random');
+
+    } catch (err) {
+        throw new Error(`Unable to update ${defaults.manifestPath}. \n${err}`);
     }
 }
 
