@@ -14,8 +14,15 @@ function addSecretToCredentialStore(ssoAppName, secret) {
                 break;
             case "darwin":
                 console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain`);
-                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w "${secret}"`;
-                childProcess.execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
+                // Check first to see if the secret already exists i the keychain. If it does, delete it and recreate it
+                const existingSecret = getSecretFromCredentialStore(ssoAppName);
+                if (existingSecret !== '') {
+                    const updatSecretInMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -U -s "${ssoAppName}" -w "${secret}"`;
+                    childProcess.execSync(updatSecretInMacStoreCommand, { stdio: "pipe" });
+                } else {
+                    const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w "${secret}"`;
+                    childProcess.execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
+                }
                 break;
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);
@@ -34,14 +41,14 @@ function getSecretFromCredentialStore(ssoAppName) {
                 return childProcess.execSync(getSecretFromWindowsStoreCommand, { stdio: "pipe" }).toString();
             case "darwin":
                 console.log(`Getting application secret for ${ssoAppName} from Mac OS Keychain`);
-                const getSecretFromMacStoreCommand = `sudo security find-generic-password -a ${os.userInfo().username} -s ${ssoAppName} -w`;
+                const getSecretFromMacStoreCommand = `sudo security find-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w`;
                 return childProcess.execSync(getSecretFromMacStoreCommand, { stdio: "pipe" }).toString();;
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);
         }
 
     } catch (err) {
-        throw new Error(`Unable to retrieve secret for ${ssoAppName} to Windows Credential Store. \n${err}`);
+        return '';
     }
 }
 

@@ -68,7 +68,7 @@ async function createNewApplication(ssoAppName, userJson) {
 
             // Create an application secret and add to the credential store
             const secret = await setApplicationSecret(applicationJson);
-            console.log(chalk.green(`App secret is ${secret}`));
+            console.log(chalk.green(`App secret is ${secret.secretText}`));
             ssoDataSettings.addSecretToCredentialStore(ssoAppName, secret.secretText);
 
             return applicationJson;
