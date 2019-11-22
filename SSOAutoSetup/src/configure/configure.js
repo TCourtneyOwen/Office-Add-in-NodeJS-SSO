@@ -14,8 +14,10 @@ async function configureSSOApplication() {
     if (!cliInstalled) {
         console.log("Azure CLI is not installed.  Installing now before proceeding");
         await installAzureCli();
-        console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
-        return;
+        if (process.platform === "win32") {
+            console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
+            return;
+        }
     }
 
     const userJson = await logIntoAzure();
